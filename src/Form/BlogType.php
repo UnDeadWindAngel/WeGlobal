@@ -4,13 +4,20 @@ namespace App\Form;
 
 use App\Entity\Blog;
 use App\Entity\Category;
+use App\Form\DataTransformer\TagTransformer;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Bridge\Doctrine\Form\Type\EntityType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 
 class BlogType extends AbstractType
 {
+    public function __construct(private readonly TagTransformer $transformer)
+    {
+        
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
@@ -22,7 +29,13 @@ class BlogType extends AbstractType
                 'choice_label' => 'name',
                 'required' => true,
             ])
+            ->add('tags',TextType::class,array(
+                'label'=>'Теги',
+                'required'=> false,
+            ))
         ;
+
+        $builder->get('tags')->addModelTransformer($this->transformer);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
