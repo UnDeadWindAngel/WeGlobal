@@ -4,10 +4,10 @@ namespace App\Entity;
 
 use App\Repository\BlogRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\PersistentCollection;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: BlogRepository::class)]
 class Blog
@@ -17,12 +17,15 @@ class Blog
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Assert\NotBlank (message: 'Заголовок не должен быть пустым!')]
     #[ORM\Column(length: 255)]
     private ?string $tittle = null;
 
+    #[Assert\NotBlank(message: 'Описание не может быть пустым!')]
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
+    #[Assert\NotBlank(message: 'Текст должен быть заполнен.')]
     #[ORM\Column(type: Types::TEXT)]
     private ?string $text = null;
 
@@ -30,16 +33,11 @@ class Blog
     #[ORM\JoinColumn(nullable: false)]
     private ?Category $category = null;
 
-    #[ORM\JoinTable(name: 'tag_blog')]
+    #[ORM\JoinTable(name: 'tags_to_blog')]
     #[ORM\JoinColumn(name: 'blog_id', referencedColumnName: 'id')]
-    #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id')]
-    #[ORM\ManyToMany(targetEntity: Tag::class, cascade:['persist'])]
+    #[ORM\InverseJoinColumn(name: 'tag_id', referencedColumnName: 'id', unique: true)]
+    #[ORM\ManyToMany(targetEntity: 'App\Entity\Tag',cascade: ['persist'])]
     private ArrayCollection|PersistentCollection $tags;
-
-    public function __construct()
-    {
-        $this->tags = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -94,7 +92,7 @@ class Blog
         return $this;
     }
 
-    public function getTags(): Collection
+    public function getTags(): ArrayCollection|PersistentCollection
     {
         return $this->tags;
     }
@@ -108,15 +106,6 @@ class Blog
 
     public function addTag(Tag $tag): void
     {
-        $this->tags[]=$tag;
-    }
-
-    public function removeTag(Tag $tag): static
-    {
-        if ($this->tags->removeElement($tag)) {
-            $tag->removeBlog($this);
-        }
-
-        return $this;
+        $this->tags[] = $tag;
     }
 }

@@ -1,49 +1,57 @@
 <?php
-// src/Form/TagDataTransformer/TagTransformer.php
 namespace App\Form\DataTransformer;
 
 use App\Entity\Tag;
 use App\Repository\TagRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\PersistentCollection;
 use Symfony\Component\Form\DataTransformerInterface;
-use Symfony\Component\Form\Exception\TransformationFailedException;
 
 class TagTransformer implements DataTransformerInterface
 {
+
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private TagRepository $tagRepository,
+        private readonly TagRepository $tagRepository,
     ) {
     }
 
-    public function transform($tag): string
+    /**
+     * @param PersistentCollection<Tag> $tags
+     * @return string
+     */
+
+    public function transform($tags): string
     {
-        if (null === $tag) {
+        if (null === $tags) {
             return '';
         }
 
-        return $tag->getName();
+        $array=[];
+        foreach ($tags as $tag) {
+            $array[] = $tag->getName();
+        }
+
+        return implode(',', $array);
     }
 
-    public function reverseTransform(mixed $value = null): ?ArrayCollection
+    public function reverseTransform(mixed $value = null): ArrayCollection
     {
         if (!$value) {
-            return null;
+            return new ArrayCollection();
         }
 
         $items = explode(",",$value);
-        $items = array_map('trim',$items);
+        $items = array_map('trim', $items);
         $items = array_unique($items);
 
         $tags = new ArrayCollection();
 
-        foreach($items as $item){
-            $tag = $this->tagRepository->findOneBy(['name' => $item]);
+        foreach ($items as $item) {
+            $tag =$this->tagRepository->findOneBy(['name' => $item]);
             if(!$tag){
-                $tag = (new Tag())->setName($item);
+                $tag = (new Tag()) ->setName($item);
             }
-            $tags ->add($tag);
+            $tags->add($tag);
         }
 
         return $tags;
